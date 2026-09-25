@@ -498,7 +498,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     if(!path){
       if(showFeedback)setValidation("error","Enter a property path.","Choose a stable, high-cardinality value used by common queries.");
       else validation.className="validation";
-      keySummary.textContent="Choose a partition key";
+      keySummary.textContent="";
       keySummaryNote.textContent="";
       return false;
     }else if(timeKey||sequential){
