@@ -375,7 +375,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
               <div class="setup-name">Partition key</div>
               <div id="default-key">
                 <div class="setup-value"><code id="key-summary">/_defaultpk</code></div>
-                <div class="immutable"><span aria-hidden="true">ⓘ</span><span id="key-summary-note">Cannot be changed after creation.</span></div>
+                <div class="setup-note" id="key-summary-note"></div>
               </div>
               <div class="setup-actions">
                 <button class="link-button" id="change-key" aria-expanded="false">Change</button>
@@ -478,7 +478,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     document.getElementById("advanced-key").open=false;
     updateAdvancedLimits();
     keySummary.textContent="/_defaultpk";
-    keySummaryNote.textContent="Cannot be changed after creation.";
+    keySummaryNote.textContent="";
   }
 
   function normalize(value){
@@ -510,29 +510,29 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       if(showFeedback)setValidation("error","This key can create a hot partition.","Sequential values direct new writes to the same partition. Choose an entity identifier such as /tenantId or /deviceId.");
       else validation.className="validation";
       keySummary.textContent=fullKey;
-      keySummaryNote.textContent=showFeedback?"Resolve the key risk before creation.":"Cannot be changed after creation.";
+      keySummaryNote.textContent=showFeedback?"Resolve the key risk before creation.":"";
       return false;
     }else if(lowCard){
       if(showFeedback)setValidation("error","This key has too few possible values.","Values such as type, status, or category can concentrate data and throughput. Choose a higher-cardinality property.");
       else validation.className="validation";
       keySummary.textContent=fullKey;
-      keySummaryNote.textContent=showFeedback?"Resolve the key risk before creation.":"Cannot be changed after creation.";
+      keySummaryNote.textContent=showFeedback?"Resolve the key risk before creation.":"";
       return false;
     }else if(path==="/id"){
       if(showFeedback)setValidation("good","This key distributes independent items well.","Point reads are efficient, but related items will not share a transactional partition.");
       else validation.className="validation";
       keySummary.textContent=[path,...levels].join(" + ");
-      keySummaryNote.textContent="Cannot be changed after creation.";
+      keySummaryNote.textContent="";
     }else if(addId.checked){
       if(showFeedback)setValidation("warning","Growth protection added.","The final /id level lets one leading-key value scale beyond 20 GB, but multi-item transactions must share the full hierarchical key.");
       else validation.className="validation";
       keySummary.textContent=[path,...levels,"/id"].join(" + ");
-      keySummaryNote.textContent="Cannot be changed after creation.";
+      keySummaryNote.textContent="";
     }else{
       if(showFeedback)setValidation("good","No common key risks detected.","Confirm that your most frequent queries include this property.");
       else validation.className="validation";
       keySummary.textContent=[path,...levels].join(" + ");
-      keySummaryNote.textContent="Cannot be changed after creation.";
+      keySummaryNote.textContent="";
     }
     return true;
   }
