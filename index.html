@@ -170,6 +170,11 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .validation.error strong{color:var(--cp-danger)}.validation.warning strong{color:var(--cp-warning)}.validation.good strong{color:var(--cp-success)}
 .check{display:flex;align-items:flex-start;gap:8px;margin-top:12px}.check input{margin-top:3px}.check span{font-size:12px}
 .immutable{display:flex;gap:6px;margin-top:5px;color:var(--cp-text-muted);font-size:12px}
+.advanced-settings{padding:0 0 22px;margin:0 0 22px;border-bottom:1px solid var(--cp-border)}
+.advanced-settings summary{display:flex;align-items:center;justify-content:space-between;color:var(--cp-link);font-weight:600;cursor:pointer}
+.advanced-settings summary span{color:var(--cp-text-muted);font-size:12px;font-weight:400}
+.advanced-settings-body{padding-top:16px}
+.advanced-settings-body .field+.field{margin-top:16px}
 .blade-footer{display:flex;justify-content:flex-end;align-items:center;gap:9px;padding:11px 22px;border-top:1px solid var(--cp-border);background:var(--cp-bg-elevated)}
 
 .copilot-inner{width:440px;height:100%;display:grid;grid-template-rows:70px 1fr auto;background:var(--cp-surface)}
@@ -401,6 +406,20 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
             </div>
           </div>
         </section>
+
+        <details class="advanced-settings">
+          <summary>Advanced settings <span>Optional</span></summary>
+          <div class="advanced-settings-body">
+            <div class="field">
+              <label class="label" for="unique-key">Unique key path</label>
+              <input class="control" id="unique-key" placeholder="/email">
+              <p class="helper">Enforce uniqueness for a property within each logical partition.</p>
+            </div>
+            <div class="field">
+              <label class="check"><input type="checkbox" id="analytical-store"><span><strong>Analytical store</strong><br>Enable analytics without affecting transactional workloads.</span></label>
+            </div>
+          </div>
+        </details>
       </div>
       <footer class="blade-footer"><button class="secondary-button">Cancel</button><button class="primary-button" id="review">Review + create</button></footer>
     </section>
