@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Cosmos DB - New container</title>
+<script>
+  (() => {
+    const param = new URLSearchParams(window.location.search).get("scoutTheme");
+    const theme =
+      param || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<!--
+THESIS: Container creation should feel native to Azure Portal while making the irreversible partition-key decision safer, not heavier.
+OWN-WORLD: Restrained Azure Portal surfaces, Segoe UI, Azure-blue actions, square-edged controls, quiet separators, and compact operational density.
+STORY: Start safely with /_defaultpk, replace it deliberately, catch risky keys inline, or ask Copilot for a workload-aware recommendation.
+FIRST VIEWPORT: Portal navigation and Data Explorer remain visible behind one right-side New Container blade; Copilot expands beside the form only when requested.
+FORM: Azure Portal side blade, the brief-pinned canonical pattern; no concept tournament because the supplied screenshot and interaction model are binding.
+-->
+<style>
+:root {
+  color-scheme: light;
+  --cp-bg: #f7f4ef;
+  --cp-bg-elevated: #fcfbf8;
+  --cp-surface: #ffffff;
+  --cp-surface-soft: #f5f5f5;
+  --cp-border: #dedede;
+  --cp-border-strong: #919191;
+  --cp-text: #242424;
+  --cp-text-muted: #5c5c5c;
+  --cp-text-soft: #6f6f6f;
+  --cp-accent: #b11f4b;
+  --cp-accent-hover: #9a1a41;
+  --cp-accent-soft: rgba(177, 31, 75, 0.08);
+  --cp-accent-fg: #ffffff;
+  --cp-success: #16a34a;
+  --cp-danger: #dc2626;
+  --cp-warning: #f59e0b;
+  --cp-link: #0078d4;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.12);
+  --cp-overlay: rgba(255, 255, 255, 0.8);
+  --cp-panel: rgba(255, 255, 255, 0.86);
+  --cp-panel-strong: rgba(255, 255, 255, 0.96);
+  --cp-sheen: rgba(255, 255, 255, 0.55);
+  --cp-highlight: rgba(177, 31, 75, 0.12);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --cp-bg: #3d3b3a;
+  --cp-bg-elevated: #343231;
+  --cp-surface: #292929;
+  --cp-surface-soft: #2e2e2e;
+  --cp-border: #474747;
+  --cp-border-strong: #5f5f5f;
+  --cp-text: #dedede;
+  --cp-text-muted: #919191;
+  --cp-text-soft: #b0b0b0;
+  --cp-accent: #fd8ea1;
+  --cp-accent-hover: #fb7b91;
+  --cp-accent-soft: rgba(253, 142, 161, 0.14);
+  --cp-accent-fg: #1a1a1a;
+  --cp-success: #4ade80;
+  --cp-danger: #f87171;
+  --cp-warning: #fbbf24;
+  --cp-link: #4da6ff;
+  --cp-shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+  --cp-overlay: rgba(41, 41, 41, 0.88);
+  --cp-panel: rgba(41, 41, 41, 0.72);
+  --cp-panel-strong: rgba(41, 41, 41, 0.96);
+  --cp-sheen: rgba(255, 255, 255, 0.04);
+  --cp-highlight: rgba(253, 142, 161, 0.12);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;overflow:hidden;background:var(--cp-bg);color:var(--cp-text);font:14px/1.45 "Segoe UI",Aptos,Calibri,-apple-system,BlinkMacSystemFont,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--cp-link);outline-offset:2px}
+.portal{height:100%;display:grid;grid-template-rows:98px 1fr;background:var(--cp-surface)}
+.portal-head{padding:13px 18px;border-bottom:1px solid var(--cp-border);background:var(--cp-surface)}
+.crumbs{color:var(--cp-text-muted);font-size:13px}
+.resource-title{display:flex;align-items:center;gap:12px;margin-top:14px}
+.cube{width:30px;height:30px;border:2px solid var(--cp-text);transform:rotate(30deg);display:grid;place-items:center}
+.cube::after{content:"";width:11px;height:11px;border:1px solid var(--cp-text)}
+.resource-title h1{margin:0;font-size:24px;font-weight:600}
+.resource-title span{font-size:22px;font-weight:400}
+.resource-title small{display:block;color:var(--cp-text-muted);font-size:13px;font-weight:400}
+.workspace{display:grid;grid-template-columns:300px 300px 1fr;min-height:0}
+.global-nav,.data-tree{border-right:1px solid var(--cp-border);background:var(--cp-surface);overflow:auto}
+.search{margin:10px 12px;padding:7px 10px;border:1px solid var(--cp-border-strong);color:var(--cp-text-muted)}
+.nav-item,.tree-item{display:flex;align-items:center;gap:10px;padding:8px 16px}
+.nav-item.active{background:var(--cp-surface-soft);font-weight:600}
+.nav-icon{width:16px;color:var(--cp-link);text-align:center}
+.data-tree{background:var(--cp-bg-elevated)}
+.tree-toolbar{padding:14px;border-bottom:1px solid var(--cp-border)}
+.tree-button{padding:8px 14px;border:1px solid var(--cp-border);background:var(--cp-surface)}
+.tree-search{margin:10px;padding:8px;border:1px solid var(--cp-border);background:var(--cp-surface);color:var(--cp-text-muted)}
+.tree-item.indent{padding-left:34px}.tree-item.selected{background:var(--cp-surface-soft);font-weight:600}
+.canvas{position:relative;overflow:hidden;background:var(--cp-surface)}
+.canvas-toolbar{height:54px;padding:15px 28px;border-bottom:1px solid var(--cp-border);color:var(--cp-link);word-spacing:18px}
+.tabs{display:flex;gap:28px;padding:18px 38px 0;border-bottom:1px solid var(--cp-border)}
+.tabs span{padding:0 0 12px}.tabs .active{border-bottom:3px solid var(--cp-link);font-weight:600}
+.canvas-content{padding:34px 42px;max-width:900px}
+.canvas-content h2{font-size:18px}.metric-line{display:flex;gap:70px;margin:26px 0}.metric-line strong{display:block;font-size:18px}
+.capacity-bar{height:14px;background:var(--cp-surface-soft)}.capacity-bar span{display:block;width:62%;height:100%;background:var(--cp-link)}
+.veil{position:absolute;inset:0;background:var(--cp-overlay)}
+
+.blade-wrap{position:fixed;inset:0 0 0 auto;display:flex;justify-content:flex-end;pointer-events:none}
+.blade-system{height:100%;display:grid;grid-template-columns:470px 0;background:var(--cp-surface);box-shadow:var(--cp-shadow);pointer-events:auto;transition:grid-template-columns .2s ease}
+.blade-system.copilot-open{grid-template-columns:470px 440px}
+.copilot-pane{order:2;min-width:0;overflow:hidden;border-left:1px solid var(--cp-border);background:var(--cp-bg-elevated)}
+.form-blade{order:1;width:470px;display:grid;grid-template-rows:60px 1fr 62px;min-height:0;background:var(--cp-surface)}
+.blade-head{display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--cp-border)}
+.blade-head h2{margin:0;font-size:20px;font-weight:500}.icon-button{width:34px;height:34px;border:0;background:transparent;font-size:24px}
+.form-scroll{overflow:auto;padding:22px}
+.form-section{padding:0 0 22px;margin:0 0 22px;border-bottom:1px solid var(--cp-border)}
+.form-section:last-child{margin-bottom:0}
+.field{margin-bottom:18px}.field:last-child{margin-bottom:0}
+.label{display:flex;align-items:center;gap:5px;margin-bottom:7px;font-weight:600}.req{color:var(--cp-danger)}
+.info{display:inline-grid;place-items:center;width:15px;height:15px;border:1px solid var(--cp-text-muted);border-radius:50%;font-size:10px;color:var(--cp-text-muted)}
+.radios{display:flex;gap:18px;margin-bottom:9px}.radio{display:flex;align-items:center;gap:7px}.radio input,.check input{accent-color:var(--cp-link)}
+.control{width:100%;height:38px;padding:7px 10px;border:1px solid var(--cp-border-strong);border-radius:2px;background:var(--cp-surface)}
+.control::placeholder{color:var(--cp-text-soft)}
+.helper{margin:6px 0 0;color:var(--cp-text-muted);font-size:12px}
+.section-heading{margin:0 0 10px;font-size:15px;font-weight:600}
+.setup-shell{border:1px solid var(--cp-border);background:var(--cp-surface)}
+.setup-row{display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:12px;align-items:start;padding:14px}
+.setup-row+.setup-row{border-top:1px solid var(--cp-border)}
+.setup-name{padding-top:2px;color:var(--cp-text-muted);font-size:12px}
+.setup-value{font-weight:600}
+.setup-value code{font:600 15px Consolas,"Courier New",Courier,monospace}
+.setup-note{margin-top:3px;color:var(--cp-text-muted);font-size:12px}
+.setup-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;white-space:nowrap}
+.copilot-action{display:inline-flex;align-items:center;gap:6px}
+.copilot-mark{width:24px;height:24px;display:grid;place-items:center}
+.copilot-mark svg{width:22px;height:22px}
+.setup-editor{display:none;grid-column:2/4;padding-top:12px}
+.setup-editor.open{display:block}
+.throughput-editor-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.editor-actions{display:flex;justify-content:flex-end;margin-top:12px}
+.link-button{padding:3px;border:0;background:transparent;color:var(--cp-link);font-weight:600}
+.link-button:hover{text-decoration:underline}
+.link-button:disabled{color:var(--cp-text-muted);cursor:not-allowed;text-decoration:none}
+.editor-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.editor-head strong{font-size:13px}.editor-head .link-button{font-weight:400}
+.key-row{display:flex;gap:8px}.key-row .control{flex:1}
+.key-guidance{margin:6px 0 0;color:var(--cp-text-muted);font-size:12px}
+.key-help{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--cp-border)}
+.key-help span:nth-child(2){color:var(--cp-text-muted);font-size:12px}
+.key-help .link-button{margin-left:auto}
+.advanced-key{margin-top:10px;border-top:1px solid var(--cp-border)}
+.advanced-key summary{padding:11px 0 0;color:var(--cp-link);font-weight:600;cursor:pointer}
+.advanced-body{padding:10px 0 2px}
+.final-id-option{display:flex;align-items:flex-start;gap:8px;margin:0 0 10px}
+.final-id-option input{margin-top:3px;accent-color:var(--cp-link)}
+.final-id-option strong,.final-id-option span{display:block}
+.final-id-option span{margin-top:2px;color:var(--cp-text-muted);font-size:12px}
+.level-limit{margin:8px 0 0;color:var(--cp-text-muted);font-size:12px}
+.hpk-levels{display:grid;gap:7px;margin-top:8px}.hpk-level{display:grid;grid-template-columns:68px 1fr auto;gap:8px;align-items:center}.hpk-level span{color:var(--cp-text-muted);font-size:12px}.remove-level{height:38px;padding:0 9px;border:1px solid var(--cp-border-strong);background:var(--cp-surface)}
+.add-level{margin-top:9px}
+.secondary-button,.primary-button{height:38px;padding:0 14px;border-radius:2px;font-weight:600}
+.secondary-button{border:1px solid var(--cp-border-strong);background:var(--cp-surface)}
+.primary-button{border:1px solid var(--cp-link);background:var(--cp-link);color:var(--cp-surface)}
+.primary-button:hover{filter:brightness(.94)}
+.primary-button:disabled{border-color:var(--cp-border);background:var(--cp-border);color:var(--cp-text-muted);cursor:not-allowed}
+.validation{display:none;margin-top:9px;padding:9px 10px;border:1px solid var(--cp-border);font-size:12px}
+.validation.show{display:flex;gap:8px}.validation.error{border-color:var(--cp-danger)}.validation.warning{border-color:var(--cp-warning)}.validation.good{border-color:var(--cp-success)}
+.validation.error strong{color:var(--cp-danger)}.validation.warning strong{color:var(--cp-warning)}.validation.good strong{color:var(--cp-success)}
+.check{display:flex;align-items:flex-start;gap:8px;margin-top:12px}.check input{margin-top:3px}.check span{font-size:12px}
+.immutable{display:flex;gap:6px;margin-top:5px;color:var(--cp-text-muted);font-size:12px}
+.blade-footer{display:flex;justify-content:flex-end;align-items:center;gap:9px;padding:11px 22px;border-top:1px solid var(--cp-border);background:var(--cp-bg-elevated)}
+
+.copilot-inner{width:440px;height:100%;display:grid;grid-template-rows:70px 1fr auto;background:var(--cp-surface)}
+.copilot-head{display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--cp-border);background:var(--cp-surface)}
+.copilot-title{display:flex;align-items:center;gap:10px}.copilot-title strong{font-size:18px;font-weight:600}.copilot-title>div{display:flex;align-items:center;gap:8px}
+.preview-badge{padding:3px 8px;border-radius:12px;background:var(--cp-surface-soft);color:var(--cp-link);font-size:12px;font-weight:600}
+.conversation{overflow:auto;padding:22px}
+.assistant-message{padding:0;background:var(--cp-surface)}
+.message-author{display:flex;align-items:center;gap:8px;margin-bottom:14px;font-weight:600}
+.assistant-message h3{margin:0 0 8px;font-size:19px;font-weight:600}.assistant-message p{margin:0;color:var(--cp-text-muted);font-size:14px;line-height:1.55}
+.scenario-label{margin:24px 0 9px;font-weight:600;font-size:13px}
+.scenarios{display:flex;flex-wrap:wrap;gap:7px}
+.scenario{padding:8px 11px;border:1px solid var(--cp-border);border-radius:14px;background:var(--cp-surface-soft);font-size:12px}
+.scenario:hover{border-color:var(--cp-link);background:var(--cp-surface);color:var(--cp-link)}
+.result{display:none;margin-top:20px;border:1px solid var(--cp-border);border-radius:14px;background:var(--cp-surface);overflow:hidden}
+.result.show{display:block}
+.result-head{padding:15px 16px;border-bottom:1px solid var(--cp-border);background:var(--cp-surface-soft)}
+.result-head span{color:var(--cp-text-muted);font-size:12px}.result-head code{display:block;margin-top:4px;font:600 17px Consolas,"Courier New",Courier,monospace}
+.result-body{padding:15px 16px}.result-body dl{margin:0}.result-body div+div{margin-top:12px}.result-body dt{font-weight:600}.result-body dd{margin:3px 0 0;color:var(--cp-text-muted);font-size:12px;line-height:1.5}
+.assumptions{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}.assumption{padding:3px 6px;border:1px solid var(--cp-border);font-size:11px;color:var(--cp-text-muted)}
+.result-actions{display:flex;justify-content:flex-end;gap:8px;padding:12px 14px;border-top:1px solid var(--cp-border)}
+.composer{padding:14px 20px 18px;border-top:1px solid var(--cp-border);background:var(--cp-surface)}
+.composer label{display:block;margin-bottom:7px;font-weight:600}.composer textarea{width:100%;min-height:92px;padding:11px 12px;border:1px solid var(--cp-border-strong);border-radius:10px;background:var(--cp-surface);resize:vertical}
+.composer-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px}.privacy{color:var(--cp-text-muted);font-size:11px}
+
+@media(max-width:1100px){
+  .workspace{grid-template-columns:230px 250px 1fr}
+  .blade-system.copilot-open{grid-template-columns:470px minmax(360px,440px)}
+}
+@media(max-width:900px){
+  .global-nav,.data-tree{display:none}.workspace{grid-template-columns:1fr}
+  .blade-system.copilot-open{grid-template-columns:1fr 1fr;width:100vw}
+  .form-blade{width:auto}.copilot-inner{width:auto}
+}
+@media(max-width:680px){
+  .portal-head{display:none}.portal{grid-template-rows:1fr}
+  .blade-system,.blade-system.copilot-open{width:100vw;grid-template-columns:1fr}
+  .copilot-pane{display:none}.blade-system.copilot-open .copilot-pane{display:block}.blade-system.copilot-open .form-blade{display:none}
+  .form-blade,.copilot-inner{width:100vw}
+  .setup-row{grid-template-columns:1fr auto}.setup-name{grid-column:1/3}.setup-editor{grid-column:1/3}.throughput-editor-grid{grid-template-columns:1fr}
+  .setup-actions{align-items:flex-start;flex-direction:column;gap:5px}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <defs>
+    <linearGradient id="copilot-blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34d6ff"/><stop offset=".52" stop-color="#0878f9"/><stop offset="1" stop-color="#2147d6"/></linearGradient>
+    <linearGradient id="copilot-green" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00b7c3"/><stop offset=".5" stop-color="#70c36b"/><stop offset="1" stop-color="#ffd43b"/></linearGradient>
+    <linearGradient id="copilot-orange" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffcf4a"/><stop offset=".52" stop-color="#ff6f48"/><stop offset="1" stop-color="#c62d55"/></linearGradient>
+    <linearGradient id="copilot-purple" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#914cff"/><stop offset=".48" stop-color="#dc62ad"/><stop offset="1" stop-color="#ffad62"/></linearGradient>
+    <symbol id="copilot-logo" viewBox="0 0 73 73">
+      <path d="M53.16 10.31c-.99-3.12-3.88-5.23-7.15-5.23h-2.48c-3.61 0-6.71 2.57-7.37 6.12l-3.67 19.72 1.1-3.64a7.5 7.5 0 0 1 7.18-5.33h11.48l6.58 2.31 3.5-2.3c-3.27 0-6.16-2.13-7.15-5.24l-2.02-6.4Z" fill="url(#copilot-blue)"/>
+      <path d="M20.62 62.81c.97 3.13 3.87 5.27 7.16 5.27h4.86a7.5 7.5 0 0 0 7.5-7.4l.26-18.1-.99 3.28a7.5 7.5 0 0 1-7.18 5.34H20.75l-5.94-2.7-3.33 2.7c3.28 0 6.18 2.14 7.16 5.27l1.98 6.34Z" fill="url(#copilot-orange)"/>
+      <path d="M45.5 5.08H19.25c-7.5 0-12 9.67-15 19.34C.7 35.88-3.95 51.2 9.5 51.2h11.43c3.34 0 6.27-2.19 7.2-5.39 1.98-6.73 5.42-18.45 8.13-27.37 1.38-4.54 2.53-8.44 4.29-10.87.99-1.36 2.64-2.5 4.95-2.5Z" fill="url(#copilot-green)"/>
+      <path d="M27.5 68.08h26.25c7.5 0 12-9.67 15-19.34 3.55-11.46 8.2-26.78-5.25-26.78H52.06c-3.33 0-6.26 2.19-7.2 5.39-1.97 6.73-5.42 18.44-8.13 27.36-1.38 4.54-2.52 8.44-4.29 10.87-.99 1.36-2.63 2.5-4.94 2.5Z" fill="url(#copilot-purple)"/>
+    </symbol>
+  </defs>
+</svg>
+<main class="portal" aria-label="Azure portal">
+  <header class="portal-head">
+    <div class="crumbs">Home &nbsp;›&nbsp; pkadvisor-samples-stef</div>
+    <div class="resource-title"><span class="cube" aria-hidden="true"></span><div><h1>pkadvisor-samples-stef <span>| Data Explorer</span></h1><small>Azure Cosmos DB account</small></div></div>
+  </header>
+  <div class="workspace">
+    <nav class="global-nav" aria-label="Azure resource navigation">
+      <div class="search">⌕&nbsp; Search</div>
+      <div class="nav-item"><span class="nav-icon">◈</span>Overview</div>
+      <div class="nav-item"><span class="nav-icon">▣</span>Activity log</div>
+      <div class="nav-item"><span class="nav-icon">♙</span>Access control (IAM)</div>
+      <div class="nav-item"><span class="nav-icon">◆</span>Tags</div>
+      <div class="nav-item"><span class="nav-icon">⌁</span>Diagnose and solve problems</div>
+      <div class="nav-item"><span class="nav-icon">☁</span>Quick start</div>
+      <div class="nav-item active"><span class="nav-icon">⬡</span>Data Explorer</div>
+      <div class="nav-item"><span class="nav-icon">▰</span>Mirroring in Fabric</div>
+      <div class="nav-item"><span class="nav-icon">▱</span>Container Copy</div>
+      <div class="nav-item"><span class="nav-icon">⌘</span>Resource visualizer</div>
+      <div class="nav-item"><span class="nav-icon">›</span>Settings</div>
+      <div class="nav-item"><span class="nav-icon">›</span>Integrations</div>
+      <div class="nav-item"><span class="nav-icon">›</span>AI Capabilities (Preview)</div>
+      <div class="nav-item"><span class="nav-icon">⌄</span>Monitoring</div>
+      <div class="nav-item"><span class="nav-icon">◉</span>Insights</div>
+      <div class="nav-item"><span class="nav-icon">▥</span>Alerts</div>
+      <div class="nav-item"><span class="nav-icon">▥</span>Metrics</div>
+    </nav>
+    <aside class="data-tree">
+      <div class="tree-toolbar"><button class="tree-button">＋ New…</button></div>
+      <div class="tree-search">⌕ Search databases only</div>
+      <div class="tree-item">⌂ Home</div>
+      <div class="tree-item">› booking-reservations</div>
+      <div class="tree-item">› chat-sessions</div>
+      <div class="tree-item">› content-management</div>
+      <div class="tree-item">⌄ ecommerce</div>
+      <div class="tree-item indent">⌄ carts</div>
+      <div class="tree-item indent selected">Items</div>
+      <div class="tree-item indent">Scale &amp; Settings</div>
+      <div class="tree-item">› event-sourcing-audit</div>
+      <div class="tree-item">› financial-ledger</div>
+      <div class="tree-item">› gaming-leaderboards</div>
+      <div class="tree-item">› inventory-supply-chain</div>
+      <div class="tree-item">› iot-telemetry</div>
+      <div class="tree-item">› multi-tenant-saas</div>
+    </aside>
+    <section class="canvas" aria-hidden="true">
+      <div class="canvas-toolbar">⬡ &nbsp; ◀ &nbsp; ＞ &nbsp; ▣ &nbsp; ⚙ &nbsp; Save &nbsp; Undo</div>
+      <div class="tabs"><span class="active">Scale</span><span>Settings</span><span>Container Policies</span><span>Indexing Policy</span><span>Partition Keys</span></div>
+      <div class="canvas-content">
+        <h2>Throughput (autoscale)</h2>
+        <div class="metric-line"><div>Minimum RU/s<strong>1,000</strong></div><div>Maximum RU/s<strong>10,000</strong></div></div>
+        <div class="capacity-bar"><span></span></div>
+        <p>Your container throughput automatically scales based on usage.</p>
+      </div>
+      <div class="veil"></div>
+    </section>
+  </div>
+</main>
+
+<div class="blade-wrap">
+  <section class="blade-system" id="blade-system">
+    <aside class="copilot-pane" aria-hidden="true" id="copilot-pane">
+      <div class="copilot-inner">
+        <header class="copilot-head">
+          <div class="copilot-title">
+            <span class="copilot-mark" aria-hidden="true">
+              <svg viewBox="0 0 73 73"><use href="#copilot-logo"/></svg>
+            </span>
+            <div><strong>Copilot</strong><span class="preview-badge">Preview</span></div>
+          </div>
+          <button class="icon-button" id="close-copilot" aria-label="Close Copilot">×</button>
+        </header>
+        <div class="conversation">
+          <div class="assistant-message">
+            <div class="message-author"><span class="copilot-mark" aria-hidden="true"><svg viewBox="0 0 73 73"><use href="#copilot-logo"/></svg></span>Copilot</div>
+            <h3>Find the right partition key</h3>
+            <p>Describe your data, common queries, transaction needs, and what could grow large. I’ll recommend a key and explain the tradeoffs.</p>
+          </div>
+          <div class="scenario-label">Try a scenario</div>
+          <div class="scenarios" id="scenarios">
+            <button class="scenario" data-scenario="A multi-tenant SaaS app. Most queries are scoped to one tenant, and some tenants may exceed 20 GB.">Multi-tenant SaaS</button>
+            <button class="scenario" data-scenario="Device telemetry. Writes are continuous and queries usually target one device over a time range. Data grows indefinitely.">IoT telemetry</button>
+            <button class="scenario" data-scenario="A product catalog. Category listing is the highest-volume query, with direct product lookups too. Some categories are very large.">Product catalog</button>
+            <button class="scenario" data-scenario="Chat messages. Messages are read by session and should stay together for transactions. Sessions are normally bounded.">Chat messages</button>
+            <button class="scenario" data-scenario="Orders. Customers list their orders frequently, and some customers may have very large histories.">Orders</button>
+            <button class="scenario" data-scenario="Immutable inventory movement history. Queries start with SKU and often narrow to warehouse. History grows indefinitely.">Inventory movements</button>
+          </div>
+          <section class="result" id="copilot-result" aria-live="polite">
+            <div class="result-head"><span>Recommended partition key</span><code id="result-key">/tenantId + /id</code></div>
+            <div class="result-body">
+              <div class="assumptions" id="assumptions"></div>
+              <dl>
+                <div><dt>Why</dt><dd id="result-why"></dd></div>
+                <div><dt>Watch for</dt><dd id="result-watch"></dd></div>
+              </dl>
+            </div>
+            <div class="result-actions"><button class="secondary-button" id="refine-result">Refine</button><button class="primary-button" id="apply-result">Use this key</button></div>
+          </section>
+        </div>
+        <div class="composer">
+          <label for="workload">Describe your app and queries</label>
+          <textarea id="workload" placeholder="For example: Organizations own projects and tasks. Most queries are within one organization, but a few organizations can get very large."></textarea>
+          <div class="composer-actions"><span class="privacy">Don’t include customer data or secrets.</span><button class="primary-button" id="analyze">Get recommendation</button></div>
+        </div>
+      </div>
+    </aside>
+
+    <section class="form-blade" aria-label="New Container">
+      <header class="blade-head"><h2>New Container</h2><button class="icon-button" aria-label="Close">×</button></header>
+      <div class="form-scroll">
+        <section class="form-section">
+          <div class="field">
+            <div class="label"><span class="req">*</span> Database id <span class="info" title="A database groups related containers.">i</span></div>
+            <div class="radios"><label class="radio"><input type="radio" name="database" checked> Create new</label><label class="radio"><input type="radio" name="database"> Use existing</label></div>
+            <input class="control" id="database" placeholder="Type a new database id" value="Sales">
+          </div>
+          <div class="field">
+            <label class="label" for="container"><span class="req">*</span> Container id <span class="info" title="Unique name for the container.">i</span></label>
+            <input class="control" id="container" placeholder="e.g., Orders" value="Orders">
+          </div>
+        </section>
+
+        <section class="form-section" aria-labelledby="setup-heading">
+          <h3 class="section-heading" id="setup-heading">Recommended setup</h3>
+          <div class="setup-shell">
+            <div class="setup-row">
+              <div class="setup-name">Throughput</div>
+              <div>
+                <div class="setup-value" id="throughput-summary">Autoscale up to 1,000 RU/s</div>
+                <div class="setup-note" id="throughput-cost">Estimated: $8.76–$87.60/month · 1 region</div>
+              </div>
+              <div class="setup-actions"><button class="link-button" id="change-throughput" aria-expanded="false">Change</button></div>
+              <div class="setup-editor" id="throughput-editor">
+                <div class="radios"><label class="radio"><input type="radio" name="throughput" value="autoscale" checked> Autoscale</label><label class="radio"><input type="radio" name="throughput" value="manual"> Manual</label></div>
+                <p class="helper" id="throughput-helper">Scales automatically from 10% to 100% of the maximum.</p>
+                <div class="throughput-editor-grid">
+                  <div class="field"><label class="label" for="min-ru">Minimum RU/s</label><input class="control" id="min-ru" value="100" readonly></div>
+                  <div class="field"><label class="label" for="max-ru">Maximum RU/s</label><input class="control" id="max-ru" value="1000" inputmode="numeric"></div>
+                </div>
+                <div class="editor-actions"><button class="secondary-button" id="done-throughput">Done</button></div>
+              </div>
+            </div>
+
+            <div class="setup-row">
+              <div class="setup-name">Partition key</div>
+              <div id="default-key">
+                <div class="setup-value"><code id="key-summary">/_defaultpk</code></div>
+                <div class="immutable"><span aria-hidden="true">ⓘ</span><span id="key-summary-note">Cannot be changed after creation.</span></div>
+              </div>
+              <div class="setup-actions">
+                <button class="link-button" id="change-key" aria-expanded="false">Change</button>
+              </div>
+              <div class="setup-editor" id="pk-editor">
+                <div class="key-row"><input class="control" id="key-input" placeholder="/tenantId" aria-describedby="key-validation"><button class="secondary-button" id="check-key">Check key</button></div>
+                <p class="key-guidance">Use a stable, high-cardinality property included in common queries.</p>
+                <div class="validation" id="key-validation"></div>
+                <div class="key-help">
+                  <span class="copilot-mark" aria-hidden="true"><svg viewBox="0 0 73 73"><use href="#copilot-logo"/></svg></span>
+                  <span>Not sure which property fits your workload?</span>
+                  <button class="link-button copilot-action" id="open-copilot">Chat with Copilot</button>
+                </div>
+                <details class="advanced-key" id="advanced-key">
+                  <summary>Advanced</summary>
+                  <div class="advanced-body">
+                    <label class="final-id-option">
+                      <input type="checkbox" id="add-id">
+                      <span><strong>Use <code>/id</code> as the final level</strong><span>For a key value that could approach 20 GB.</span></span>
+                    </label>
+                    <div class="hpk-levels" id="hpk-levels"></div>
+                    <button class="link-button add-level" id="add-level">＋ Add another property</button>
+                    <p class="level-limit" id="level-limit">1 of 3 levels used.</p>
+                  </div>
+                </details>
+                <div class="editor-actions"><button class="secondary-button" id="done-key">Done</button></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+      <footer class="blade-footer"><button class="secondary-button">Cancel</button><button class="primary-button" id="review">Review + create</button></footer>
+    </section>
+  </section>
+</div>
+
+<script>
+(function(){
+  const bladeSystem=document.getElementById("blade-system");
+  const copilotPane=document.getElementById("copilot-pane");
+  const keyEditor=document.getElementById("pk-editor");
+  const keyInput=document.getElementById("key-input");
+  const addId=document.getElementById("add-id");
+  const keySummary=document.getElementById("key-summary");
+  const keySummaryNote=document.getElementById("key-summary-note");
+  const changeKey=document.getElementById("change-key");
+  const validation=document.getElementById("key-validation");
+  const hpkLevels=document.getElementById("hpk-levels");
+  const addLevelButton=document.getElementById("add-level");
+  const levelLimit=document.getElementById("level-limit");
+  const throughputEditor=document.getElementById("throughput-editor");
+  const changeThroughput=document.getElementById("change-throughput");
+  const maxRu=document.getElementById("max-ru");
+  const minRu=document.getElementById("min-ru");
+  const maxKeyLevels=3;
+  let currentRecommendation=null;
+
+  function updateAdvancedLimits(){
+    const rows=[...hpkLevels.querySelectorAll(".hpk-level")];
+    rows.forEach((row,index)=>row.querySelector("span").textContent="Level "+(index+2));
+    const usedLevels=1+rows.length+(addId.checked?1:0);
+    addLevelButton.disabled=usedLevels>=maxKeyLevels;
+    addId.disabled=!addId.checked&&1+rows.length>=maxKeyLevels;
+    levelLimit.textContent=usedLevels+" of 3 levels used.";
+  }
+
+  function addLevel(value=""){
+    if(1+hpkLevels.children.length+(addId.checked?1:0)>=maxKeyLevels)return;
+    const row=document.createElement("div");
+    row.className="hpk-level";
+    row.innerHTML="<span>Next level</span><input class='control' placeholder='/projectId' value='"+value.replace(/'/g,"&#39;")+"'><button class='remove-level' aria-label='Remove hierarchical level'>Remove</button>";
+    row.querySelector("input").addEventListener("input",()=>validateKey(false));
+    row.querySelector(".remove-level").addEventListener("click",()=>{row.remove();updateAdvancedLimits();validateKey(false);});
+    hpkLevels.appendChild(row);
+    updateAdvancedLimits();
+  }
+
+  function openCustomKey(value="",levels=[]){
+    keyEditor.classList.add("open");
+    changeKey.setAttribute("aria-expanded","true");
+    changeKey.textContent="Use default";
+    keyInput.value=value;
+    addId.checked=false;
+    hpkLevels.innerHTML="";
+    levels.forEach(addLevel);
+    updateAdvancedLimits();
+    validation.className="validation";
+    validateKey(false);
+    keyInput.focus();
+  }
+
+  function useDefault(){
+    keyEditor.classList.remove("open");
+    changeKey.setAttribute("aria-expanded","false");
+    changeKey.textContent="Change";
+    keyInput.value="";
+    addId.checked=false;
+    hpkLevels.innerHTML="";
+    validation.className="validation";
+    document.getElementById("advanced-key").open=false;
+    updateAdvancedLimits();
+    keySummary.textContent="/_defaultpk";
+    keySummaryNote.textContent="Cannot be changed after creation.";
+  }
+
+  function normalize(value){
+    const clean=value.trim().replace(/^\/+/,"");
+    return clean?"/"+clean:"";
+  }
+
+  function setValidation(type,title,message){
+    validation.className="validation show "+type;
+    validation.innerHTML="<span aria-hidden='true'>"+(type==="good"?"✓":type==="warning"?"⚠":"⊘")+"</span><span><strong>"+title+"</strong> "+message+"</span>";
+  }
+
+  function validateKey(showFeedback=true){
+    const path=normalize(keyInput.value);
+    const levels=[...hpkLevels.querySelectorAll("input")].map(input=>normalize(input.value)).filter(Boolean);
+    const leaf=path.slice(1).toLowerCase();
+    const timeKey=/(^|_)(time|timestamp|date|createdat|updatedat)$/.test(leaf)||/(time|timestamp|date)$/i.test(leaf);
+    const lowCard=["type","status","category","state","priority","region","country","boolean","active"].includes(leaf);
+    const sequential=["sequence","counter","number","index"].includes(leaf);
+    const fullKey=[path,...levels,addId.checked?"/id":""].filter(Boolean).join(" + ");
+
+    if(!path){
+      if(showFeedback)setValidation("error","Enter a property path.","Choose a stable, high-cardinality value used by common queries.");
+      else validation.className="validation";
+      keySummary.textContent="Choose a partition key";
+      keySummaryNote.textContent="The starter key is no longer selected.";
+      return false;
+    }else if(timeKey||sequential){
+      if(showFeedback)setValidation("error","This key can create a hot partition.","Sequential values direct new writes to the same partition. Choose an entity identifier such as /tenantId or /deviceId.");
+      else validation.className="validation";
+      keySummary.textContent=fullKey;
+      keySummaryNote.textContent=showFeedback?"Resolve the key risk before creation.":"Cannot be changed after creation.";
+      return false;
+    }else if(lowCard){
+      if(showFeedback)setValidation("error","This key has too few possible values.","Values such as type, status, or category can concentrate data and throughput. Choose a higher-cardinality property.");
+      else validation.className="validation";
+      keySummary.textContent=fullKey;
+      keySummaryNote.textContent=showFeedback?"Resolve the key risk before creation.":"Cannot be changed after creation.";
+      return false;
+    }else if(path==="/id"){
+      if(showFeedback)setValidation("good","This key distributes independent items well.","Point reads are efficient, but related items will not share a transactional partition.");
+      else validation.className="validation";
+      keySummary.textContent=[path,...levels].join(" + ");
+      keySummaryNote.textContent="Cannot be changed after creation.";
+    }else if(addId.checked){
+      if(showFeedback)setValidation("warning","Growth protection added.","The final /id level lets one leading-key value scale beyond 20 GB, but multi-item transactions must share the full hierarchical key.");
+      else validation.className="validation";
+      keySummary.textContent=[path,...levels,"/id"].join(" + ");
+      keySummaryNote.textContent="Cannot be changed after creation.";
+    }else{
+      if(showFeedback)setValidation("good","No common key risks detected.","Confirm that your most frequent queries include this property.");
+      else validation.className="validation";
+      keySummary.textContent=[path,...levels].join(" + ");
+      keySummaryNote.textContent="Cannot be changed after creation.";
+    }
+    return true;
+  }
+
+  function updateThroughput(){
+    const mode=document.querySelector("input[name='throughput']:checked").value;
+    const rus=Math.max(100,Number.parseInt(maxRu.value,10)||1000);
+    maxRu.value=rus;
+    const monthly=(rus*.0876).toFixed(2);
+    if(mode==="autoscale"){
+      const minimum=Math.max(100,Math.round(rus/10));
+      minRu.value=minimum;
+      minRu.closest(".field").style.display="";
+      document.getElementById("throughput-helper").textContent="Scales automatically from 10% to 100% of the maximum.";
+      document.getElementById("throughput-summary").textContent="Autoscale up to "+rus.toLocaleString()+" RU/s";
+      document.getElementById("throughput-cost").textContent="Estimated: $"+(monthly/10).toFixed(2)+"–$"+monthly+"/month · 1 region";
+    }else{
+      minRu.closest(".field").style.display="none";
+      document.getElementById("throughput-helper").textContent="Keeps throughput fixed at the selected RU/s.";
+      document.getElementById("throughput-summary").textContent="Manual at "+rus.toLocaleString()+" RU/s";
+      document.getElementById("throughput-cost").textContent="Estimated: $"+monthly+"/month · 1 region";
+    }
+  }
+
+  function closeThroughputEditor(){
+    updateThroughput();
+    throughputEditor.classList.remove("open");
+    changeThroughput.setAttribute("aria-expanded","false");
+    changeThroughput.textContent="Change";
+  }
+
+  function closeKeyEditor(){
+    if(!validateKey(true)){
+      keyInput.focus();
+      return;
+    }
+    keyEditor.classList.remove("open");
+    changeKey.setAttribute("aria-expanded","false");
+    changeKey.textContent="Change";
+  }
+
+  function openCopilot(){
+    bladeSystem.classList.add("copilot-open");
+    copilotPane.setAttribute("aria-hidden","false");
+    setTimeout(()=>document.getElementById("workload").focus(),220);
+  }
+
+  function closeCopilot(){
+    bladeSystem.classList.remove("copilot-open");
+    copilotPane.setAttribute("aria-hidden","true");
+  }
+
+  const recommendations=[
+    {match:/telemetry|device|sensor|time range/i,key:"/deviceId + /timeBucket + /id",tags:["append-heavy","time-range queries","unbounded growth"],why:"Device queries route by the leading prefix, a derived time bucket bounds each range, and /id distributes sustained writes.",watch:"Queries should include the relevant time bucket or buckets."},
+    {match:/inventory movement|movement history/i,key:"/skuId + /warehouseId + /movementId",tags:["immutable history","SKU queries","warehouse scope"],why:"SKU queries use prefix routing, warehouse queries narrow further, and the final ID prevents an unbounded logical partition.",watch:"All transactional operations must share the complete hierarchical key."},
+    {match:/product|catalog|category/i,key:"/categoryId + /productId",tags:["category listing","direct product lookup","skewed categories"],why:"The dominant category query targets the first-level prefix while large categories distribute by product.",watch:"Direct product lookup should also provide categoryId to avoid fan-out."},
+    {match:/chat|message|conversation/i,key:"/sessionId",tags:["session history","transactional messages","bounded groups"],why:"Messages remain colocated for session reads and transactional batches.",watch:"Add /messageId only if one session could become exceptionally large or hot."},
+    {match:/order|customer purchase/i,key:"/customerId + /orderId",tags:["customer history","order lookup","conditional growth"],why:"Customer-order queries target the leading prefix and unusually large histories can distribute by order.",watch:"Direct order lookup should include customerId."},
+    {match:/ledger|account history/i,key:"/accountId + /ledgerId",tags:["account history","large accounts","transaction caveat"],why:"Account-history access follows the hierarchy and large accounts can scale.",watch:"Use /accountId alone when multiple entries must commit atomically within one account."},
+    {match:/document chunk|chunks|source document/i,key:"/sourceId",tags:["source-scoped reads","bounded chunks","simple key"],why:"Chunks from one source stay colocated and are normally bounded.",watch:"Category searches still fan out; add /chunkIndex only for exceptionally large sources."},
+    {match:/player state|leaderboard/i,key:"/playerId",tags:["player access","point reads","bounded history"],why:"Player access dominates and individual player histories should remain small.",watch:"A season leaderboard still spans partitions because season is not the leading key."},
+    {match:/domain event|event stream|stream replay/i,key:"/streamId",tags:["stream replay","transactional appends","bounded stream"],why:"Events for one stream remain colocated for replay and transactional appends.",watch:"Add /id only when a single stream can exceed 20 GB and cross-event transactions are unnecessary."},
+    {match:/click event|session funnel/i,key:"/sessionId",tags:["session history","bounded sessions","simple key"],why:"Session history stays colocated and sessions are naturally bounded.",watch:"User-funnel and global event-name queries still fan out."},
+    {match:/content item|site listing/i,key:"/siteId + /contentId",tags:["site listing","skewed sites","conditional growth"],why:"Site listing targets the leading prefix while large sites can distribute by content.",watch:"Content lookup should include siteId."},
+    {match:/stock level/i,key:"/skuId",tags:["SKU reads","warehouse rows","bounded groups"],why:"SKU already supports the high-volume reads and warehouse rows per SKU are naturally bounded.",watch:"An additional warehouse level usually adds complexity without improving routing."},
+    {match:/reservation|property availability/i,key:"/propertyId + /reservationId",tags:["property queries","availability","high-volume properties"],why:"Property and availability queries follow the prefix and busy properties can distribute by reservation.",watch:"Reservation lookup should include propertyId."},
+    {match:/line item|order lines/i,key:"/orderId",tags:["order-scoped reads","bounded lines","colocation"],why:"Order lines are bounded and should remain colocated.",watch:"A lineItemId key is poorly aligned with the primary order query."},
+    {match:/user profile|social user|chat user/i,key:"/userId",tags:["point reads","high cardinality","simple key"],why:"User data is point-oriented and userId distributes records well.",watch:"Email, segment, handle, and follower-count queries remain cross-partition."},
+    {match:/customer record|customer entity/i,key:"/customerId",tags:["point reads","small entity","simple key"],why:"Customer records are small and point-oriented.",watch:"No hierarchical level is needed unless one customer owns an unbounded child dataset."},
+    {match:/tenant|organization|saas|multi-tenant|project/i,key:"/tenantId + /id",tags:["tenant-scoped queries","large tenants","noisy-neighbor protection"],why:"Tenant queries target the first-level prefix while /id lets large or hot tenants spread across child partitions.",watch:"Multi-item transactions must share the complete /tenantId + /id value."}
+  ];
+
+  function recommendationFor(text){
+    return recommendations.find(item=>item.match.test(text))||{
+      key:"/id",
+      tags:["independent items","point reads","high cardinality"],
+      why:"A unique item identifier distributes data evenly and supports efficient point reads.",
+      watch:"Queries without id fan out, and related items cannot share multi-item transactions."
+    };
+  }
+
+  function showRecommendation(){
+    const text=document.getElementById("workload").value.trim();
+    if(!text){
+      document.getElementById("workload").focus();
+      return;
+    }
+    currentRecommendation=recommendationFor(text);
+    document.getElementById("result-key").textContent=currentRecommendation.key;
+    document.getElementById("result-why").textContent=currentRecommendation.why;
+    document.getElementById("result-watch").textContent=currentRecommendation.watch;
+    document.getElementById("assumptions").innerHTML=currentRecommendation.tags.map(tag=>"<span class='assumption'>"+tag+"</span>").join("");
+    document.getElementById("copilot-result").classList.add("show");
+  }
+
+  function applyRecommendation(){
+    if(!currentRecommendation)return;
+    const parts=currentRecommendation.key.split(" + ");
+    const hasFinalId=parts[parts.length-1]==="/id"&&parts.length>1;
+    const middle=parts.slice(1,hasFinalId?-1:undefined);
+    openCustomKey(parts[0],middle);
+    addId.checked=hasFinalId;
+    updateAdvancedLimits();
+    if(middle.length||hasFinalId)document.getElementById("advanced-key").open=true;
+    validateKey(false);
+    closeCopilot();
+  }
+
+  changeKey.addEventListener("click",()=>keyEditor.classList.contains("open")?useDefault():openCustomKey());
+  document.getElementById("done-key").addEventListener("click",closeKeyEditor);
+  document.getElementById("check-key").addEventListener("click",()=>validateKey(true));
+  addLevelButton.addEventListener("click",()=>{
+    addLevel();
+    validateKey(false);
+    const lastInput=hpkLevels.lastElementChild?.querySelector("input");
+    if(lastInput)lastInput.focus();
+  });
+  keyInput.addEventListener("input",()=>validateKey(false));
+  keyInput.addEventListener("blur",()=>{if(normalize(keyInput.value))validateKey(true);});
+  addId.addEventListener("change",()=>{updateAdvancedLimits();validateKey(false);});
+  changeThroughput.addEventListener("click",()=>{
+    throughputEditor.classList.add("open");
+    changeThroughput.setAttribute("aria-expanded","true");
+    changeThroughput.textContent="Editing";
+    maxRu.focus();
+  });
+  document.getElementById("done-throughput").addEventListener("click",closeThroughputEditor);
+  document.querySelectorAll("input[name='throughput']").forEach(input=>input.addEventListener("change",updateThroughput));
+  maxRu.addEventListener("input",updateThroughput);
+  document.getElementById("open-copilot").addEventListener("click",openCopilot);
+  document.getElementById("close-copilot").addEventListener("click",closeCopilot);
+  document.getElementById("analyze").addEventListener("click",showRecommendation);
+  document.getElementById("apply-result").addEventListener("click",applyRecommendation);
+  document.getElementById("refine-result").addEventListener("click",()=>document.getElementById("workload").focus());
+  document.querySelectorAll(".scenario").forEach(button=>button.addEventListener("click",()=>{
+    document.getElementById("workload").value=button.dataset.scenario;
+    showRecommendation();
+  }));
+  document.getElementById("workload").addEventListener("keydown",event=>{
+    if((event.ctrlKey||event.metaKey)&&event.key==="Enter")showRecommendation();
+  });
+  document.getElementById("review").addEventListener("click",event=>{
+    event.currentTarget.textContent="Ready to review";
+    event.currentTarget.disabled=true;
+  });
+
+  const previewState=new URLSearchParams(location.search).get("state");
+  if(previewState==="guardrail"){openCustomKey("/type");validateKey(true);}
+  if(previewState==="copilot"){
+    openCopilot();
+    document.getElementById("workload").value="A multi-tenant SaaS app. Most queries are scoped to one tenant, and some tenants may exceed 20 GB.";
+    showRecommendation();
+  }
+})();
+</script>
+</body>
+</html>
