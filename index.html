@@ -437,7 +437,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     const rows=[...hpkLevels.querySelectorAll(".hpk-level")];
     rows.forEach((row,index)=>row.querySelector("span").textContent="Level "+(index+2));
     const usedLevels=1+rows.length+(addId.checked?1:0);
-    addLevelButton.disabled=usedLevels>=maxKeyLevels;
+    addLevelButton.hidden=usedLevels>=maxKeyLevels;
     addId.disabled=!addId.checked&&1+rows.length>=maxKeyLevels;
     levelLimit.textContent=usedLevels+" of 3 levels used.";
   }
