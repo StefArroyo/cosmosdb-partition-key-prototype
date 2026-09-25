@@ -147,9 +147,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .editor-head strong{font-size:13px}.editor-head .link-button{font-weight:400}
 .key-row{display:flex;gap:8px}.key-row .control{flex:1}
 .key-guidance{margin:6px 0 0;color:var(--cp-text-muted);font-size:12px}
-.key-help{display:flex;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--cp-border)}
-.key-help span:nth-child(2){color:var(--cp-text-muted);font-size:12px}
-.key-help .link-button{margin-left:auto}
+.copilot-check{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.copilot-check .copilot-mark{width:20px;height:20px}
+.copilot-check .copilot-mark svg{width:18px;height:18px}
 .advanced-key{margin-top:10px;border-top:1px solid var(--cp-border)}
 .advanced-key summary{padding:11px 0 0;color:var(--cp-link);font-weight:600;cursor:pointer}
 .advanced-body{padding:10px 0 2px}
@@ -381,14 +381,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
                 <button class="link-button" id="change-key" aria-expanded="false">Change</button>
               </div>
               <div class="setup-editor" id="pk-editor">
-                <div class="key-row"><input class="control" id="key-input" placeholder="/tenantId" aria-describedby="key-validation"><button class="secondary-button" id="check-key">Check key</button></div>
+                <div class="key-row"><input class="control" id="key-input" placeholder="/tenantId" aria-describedby="key-validation"><button class="secondary-button copilot-check" id="open-copilot"><span class="copilot-mark" aria-hidden="true"><svg viewBox="0 0 73 73"><use href="#copilot-logo"/></svg></span>Check with Copilot</button></div>
                 <p class="key-guidance">Use a stable, high-cardinality property included in common queries.</p>
                 <div class="validation" id="key-validation"></div>
-                <div class="key-help">
-                  <span class="copilot-mark" aria-hidden="true"><svg viewBox="0 0 73 73"><use href="#copilot-logo"/></svg></span>
-                  <span>Need help?</span>
-                  <button class="link-button copilot-action" id="open-copilot">Chat with Copilot</button>
-                </div>
                 <details class="advanced-key" id="advanced-key">
                   <summary>Advanced</summary>
                   <div class="advanced-body">
@@ -504,7 +499,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
       if(showFeedback)setValidation("error","Enter a property path.","Choose a stable, high-cardinality value used by common queries.");
       else validation.className="validation";
       keySummary.textContent="Choose a partition key";
-      keySummaryNote.textContent="The starter key is no longer selected.";
+      keySummaryNote.textContent="";
       return false;
     }else if(timeKey||sequential){
       if(showFeedback)setValidation("error","This key can create a hot partition.","Sequential values direct new writes to the same partition. Choose an entity identifier such as /tenantId or /deviceId.");
@@ -643,7 +638,6 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 
   changeKey.addEventListener("click",()=>keyEditor.classList.contains("open")?useDefault():openCustomKey());
   document.getElementById("done-key").addEventListener("click",closeKeyEditor);
-  document.getElementById("check-key").addEventListener("click",()=>validateKey(true));
   addLevelButton.addEventListener("click",()=>{
     addLevel();
     validateKey(false);
@@ -662,7 +656,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   document.getElementById("done-throughput").addEventListener("click",closeThroughputEditor);
   document.querySelectorAll("input[name='throughput']").forEach(input=>input.addEventListener("change",updateThroughput));
   maxRu.addEventListener("input",updateThroughput);
-  document.getElementById("open-copilot").addEventListener("click",openCopilot);
+  document.getElementById("open-copilot").addEventListener("click",()=>{
+    const path=normalize(keyInput.value);
+    const workload=document.getElementById("workload");
+    if(path&&!workload.value.trim())workload.value="I’m considering "+path+" as my partition key. Help me check it against my query patterns and growth needs.";
+    openCopilot();
+  });
   document.getElementById("close-copilot").addEventListener("click",closeCopilot);
   document.getElementById("analyze").addEventListener("click",showRecommendation);
   document.getElementById("apply-result").addEventListener("click",applyRecommendation);
