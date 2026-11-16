@@ -114,6 +114,10 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 .form-blade{order:1;width:470px;display:grid;grid-template-rows:60px 1fr 62px;min-height:0;background:var(--cp-surface)}
 .blade-head{display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--cp-border)}
 .blade-head h2{margin:0;font-size:20px;font-weight:500}.icon-button{width:34px;height:34px;border:0;background:transparent;font-size:24px}
+.blade-title{display:flex;align-items:center;gap:12px}
+.version-switch{display:flex;align-items:center;padding:2px;border:1px solid var(--cp-border);border-radius:3px;background:var(--cp-bg-elevated);font-size:12px}
+.version-switch a{padding:4px 8px;color:var(--cp-text-muted);text-decoration:none}
+.version-switch a[aria-current="page"]{background:var(--cp-surface);color:var(--cp-text);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .form-scroll{overflow:auto;padding:22px}
 .form-section{padding:0 0 22px;margin:0 0 22px;border-bottom:1px solid var(--cp-border)}
 .form-section:last-child{margin-bottom:0}
@@ -216,6 +220,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
   .form-blade,.copilot-inner{width:100vw}
   .setup-row{grid-template-columns:1fr auto}.setup-name{grid-column:1/3}.setup-editor{grid-column:1/3}.throughput-editor-grid{grid-template-columns:1fr}
   .setup-actions{align-items:flex-start;flex-direction:column;gap:5px}
+  .key-row{flex-direction:column}.copilot-check{justify-content:center;width:100%}
 }
 </style>
 </head>
@@ -341,16 +346,25 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
     </aside>
 
     <section class="form-blade" aria-label="New Container">
-      <header class="blade-head"><h2>New Container</h2><button class="icon-button" aria-label="Close">×</button></header>
+      <header class="blade-head">
+        <div class="blade-title">
+          <h2>New Container</h2>
+          <nav class="version-switch" aria-label="Prototype version">
+            <a href="index.html" aria-current="page">North Star</a>
+            <a href="now.html">Available now</a>
+          </nav>
+        </div>
+        <button class="icon-button" aria-label="Close">×</button>
+      </header>
       <div class="form-scroll">
         <section class="form-section">
           <div class="field">
-            <div class="label"><span class="req">*</span> Database id <span class="info" title="A database groups related containers.">i</span></div>
+            <div class="label"><span class="req">*</span> Database name <span class="info" title="The name of the database that groups related containers.">i</span></div>
             <div class="radios"><label class="radio"><input type="radio" name="database" checked> Create new</label><label class="radio"><input type="radio" name="database"> Use existing</label></div>
-            <input class="control" id="database" placeholder="Type a new database id" value="Sales">
+            <input class="control" id="database" placeholder="Type a new database name" value="Sales">
           </div>
           <div class="field">
-            <label class="label" for="container"><span class="req">*</span> Container id <span class="info" title="Unique name for the container.">i</span></label>
+            <label class="label" for="container"><span class="req">*</span> Container name <span class="info" title="The unique name of the container.">i</span></label>
             <input class="control" id="container" placeholder="e.g., Orders" value="Orders">
           </div>
         </section>
@@ -390,7 +404,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
                 <p class="key-guidance">Use a stable, high-cardinality property included in common queries.</p>
                 <div class="validation" id="key-validation"></div>
                 <details class="advanced-key" id="advanced-key">
-                  <summary>Advanced</summary>
+                  <summary>Hierarchical partition key</summary>
                   <div class="advanced-body">
                     <label class="final-id-option">
                       <input type="checkbox" id="add-id">
@@ -408,7 +422,7 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
         </section>
 
         <details class="advanced-settings">
-          <summary>Advanced settings <span>Optional</span></summary>
+          <summary>Additional container settings <span>Optional</span></summary>
           <div class="advanced-settings-body">
             <div class="field">
               <label class="label" for="unique-key">Unique key path</label>
